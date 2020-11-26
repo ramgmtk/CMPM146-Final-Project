@@ -10,19 +10,23 @@ public class RoomGenerator : MonoBehaviour
     public GameObject room;
     public List<GameObject> rooms = new List<GameObject>();
     [HideInInspector]public bool dungeonGenerated = false;
+    [HideInInspector]public int offset;
     private Dictionary<Vector3, GameObject> roomLocations = new Dictionary<Vector3, GameObject>();
-    float offset = 10;
     // Start is called before the first frame update
     void Start()
     {
         offset = room.GetComponent<Room>().roomSize;
-        StartCoroutine(GenerateDungeon());
     }
 
     // Update is called once per frame
     void Update()
     {
         
+    }
+
+    public void CreateDungeon()
+    {
+        StartCoroutine(GenerateDungeon());
     }
 
     IEnumerator GenerateDungeon()

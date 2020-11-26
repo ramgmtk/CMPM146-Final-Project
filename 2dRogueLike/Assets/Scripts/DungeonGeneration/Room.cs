@@ -11,7 +11,9 @@ public class Room : MonoBehaviour
     public float offset = -4.5f;
     public string roomType = "None";
     [HideInInspector]public GameObject [,] tiles;
+    [HideInInspector]public GameObject [,] elements;
     [HideInInspector]public bool locked = false;
+    [HideInInspector]public bool visited = false;
     [HideInInspector]public Dictionary<char, GameObject> neighbors = new Dictionary<char, GameObject>();
     [HideInInspector]public bool roomGenerated = false;
 
@@ -23,6 +25,7 @@ public class Room : MonoBehaviour
     {
         pos = this.transform.position;
         tiles = new GameObject[roomSize, roomSize];
+        elements = new GameObject[roomSize, roomSize];
         SetupLevel();
         roomGenerated = true;
     }
@@ -114,7 +117,8 @@ public class Room : MonoBehaviour
         GameObject replaced = tiles[x, y];
         GameObject instance = Instantiate(replacer, new Vector3(replaced.transform.position.x, replaced.transform.position.y, 0f),Quaternion.identity) as GameObject;
         tiles[x, y] = instance;
-        replaced.SetActive(false);
+        //replaced.SetActive(false);
+        Destroy(replaced);
         instance.transform.SetParent(roomHolder);
     }
 
