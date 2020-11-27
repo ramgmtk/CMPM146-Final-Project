@@ -2,6 +2,9 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+//Class GameModerator
+//Container class which Generated the dungeon as well as modifies it.
+//For the time being nothing should be modified in the file.
 [RequireComponent(typeof(RoomGenerator), typeof(RoomDirector))]
 public class GameModerator : MonoBehaviour
 {

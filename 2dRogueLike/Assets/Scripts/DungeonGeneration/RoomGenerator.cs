@@ -4,31 +4,45 @@ using System.Collections.Generic;
 using Random = UnityEngine.Random;
 using UnityEngine;
 
+//Class:Room Generator
+//Handles the intiial creation of the dungeon
+//Not of it's methods should be called by other scripts.
+//Contains a list of all the rooms present within the dungeon.
 public class RoomGenerator : MonoBehaviour
 {
+    //Determines how many rooms are generated. DO NOT CALL
     public int dungeonSize;
+    //prefeb for the object ot be instantiated as a room in the dungeon. DO NOT CALL
     public GameObject room;
+    //A list containing all of the rooms in the dungeon. List elements are GameObjects representing instances of a room.
     public List<GameObject> rooms = new List<GameObject>();
+    
+    //THE FOLLOW ARE USED FOR DUGEON GENERATION. DO NOT CALL
     [HideInInspector]public bool dungeonGenerated = false;
     [HideInInspector]public int offset;
     private Dictionary<Vector3, GameObject> roomLocations = new Dictionary<Vector3, GameObject>();
     // Start is called before the first frame update
+    //acts as the constructor for this class
     void Start()
     {
         offset = room.GetComponent<Room>().roomSize;
     }
 
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
-
+    //CreateDugeon
+    //Return type: void
+    //Parameters: none
+    //Starts the coroutine that will generate the dungeon.
     public void CreateDungeon()
     {
         StartCoroutine(GenerateDungeon());
     }
 
+    //NONE OF THE FOLLOWING METHODS/COROUTINES SHOULD BE ACCESSED BY SCRIPTS OUTSIDE THE CLASS
+    //Generated the dungeon
+    //Coroutine GenerateDungeon
+    //Return type none
+    //Parameters none
+    //Generated a dungeon by randomly placing rooms adjacent to one another.
     IEnumerator GenerateDungeon()
     {
         Dictionary<char, char> cardinal = new Dictionary<char, char>();
@@ -39,6 +53,7 @@ public class RoomGenerator : MonoBehaviour
         //generate starting room
         GameObject firstRoom = Instantiate(room, transform.position, Quaternion.identity) as GameObject;
         yield return new WaitUntil(() => firstRoom.GetComponent<Room>().roomGenerated == true);
+        firstRoom.GetComponent<Room>().roomType = "Start";
         rooms.Add(firstRoom);
         roomLocations.Add(firstRoom.transform.position, firstRoom);
         firstRoom.transform.SetParent(this.transform);
@@ -72,10 +87,18 @@ public class RoomGenerator : MonoBehaviour
             CheckForNeighbors(ref instance, cardinal);
             currRoom = instance;
         }
+        currRoom.GetComponent<Room>().roomType = "End";
+        currRoom.GetComponent<Room>().SetLockStatus(true);
         dungeonGenerated = true;
         yield return null;
     }
 
+    //TravereRooms
+    //Return type: char
+    //Parameters: ref Gameobject
+    //Randomely traverse the existing rooms to find a new place to add a new room.
+    //Return the direction the new room should be added, relative the current room it is being added to.
+    //The gameobject curroom will be modified during the function as it operateds as a pointer to whatever room the game is looking at.
     //Traverse the stage, until currRoom reaches a dead end
     private char TraverseRooms(ref GameObject currRoom)
     {
@@ -93,6 +116,8 @@ public class RoomGenerator : MonoBehaviour
         return direction;
     }
 
+    //Given a room, check if it has neighbors.
+    //Utilizes a rooms position in the game to determine it's neighbors.
     private void CheckForNeighbors(ref GameObject newRoom, Dictionary<char, char> directions)
     {
         foreach(KeyValuePair<char, char> direction in directions)
