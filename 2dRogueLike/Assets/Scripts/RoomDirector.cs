@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using ArgumentException = System.ArgumentException;
 using UnityEngine;
 
 using Random = System.Random;
@@ -55,7 +56,7 @@ public class RoomDirector : MonoBehaviour
             numberOfLockedRooms, numberOfLockedRooms == 1 ? "" : "s"));
 
         // Here is where we should make a BFS algorithm that places keys where it needs to be placed.
-        PlaceKeys(numberOfLockedRooms);
+        Debug.Log(string.Format("Keys placed = {0}", PlaceKeys(numberOfLockedRooms + 1)));
     }
 
     //EditElementInRoom
@@ -129,7 +130,7 @@ public class RoomDirector : MonoBehaviour
         int lockedRoomCount = 0;
         while (lockedRoomCount < limit)
         {
-            int chosenIndex = rng.Next(activeRooms.Count);
+            int chosenIndex = rng.Next(1, activeRooms.Count);
             Room chosenRoom = activeRooms[chosenIndex].GetComponent<Room>();
             if (chosenRoom.locked)
             {
@@ -150,27 +151,31 @@ public class RoomDirector : MonoBehaviour
     /// <returns>The number of keys that were placed.</returns>
     private int PlaceKeys(int numKeys)
     {
+        // Random rng
+        Random rng = new Random();
+
+        /*** RUN BFS AND CREATE DICTIONARY OF ROOMS THAT MAP TO # OF KEYS REQUIRED ***/
         // BFS based off of: https://www.redblobgames.com/pathfinding/a-star/introduction.html
-        Room start = activeRooms[0].GetComponent<Room>();
-        Queue<Room> rooms = new Queue<Room>();
+        GameObject start = activeRooms[0];
+        Queue<GameObject> rooms = new Queue<GameObject>();
         rooms.Enqueue(start);
-        Dictionary<Room, Room> cameFromDict = new Dictionary<Room, Room>();
+        Dictionary<GameObject, GameObject> cameFromDict = new Dictionary<GameObject, GameObject>();
         cameFromDict.Add(start, null);
-        Dictionary<Room, int> keysNeededDict = new Dictionary<Room, int>();
-        keysNeededDict.Add(start, 0);
+        Dictionary<GameObject, int> keysNeededDict = new Dictionary<GameObject, int>();
+        keysNeededDict.Add(start, (start.GetComponent<Room>().locked?1:0));
 
         while (rooms.Count > 0)
         {
-            Room currentRoom = rooms.Dequeue();
-            foreach(KeyValuePair<char, GameObject> neighborPair in currentRoom.neighbors)
+            GameObject currentRoom = rooms.Dequeue();
+            foreach(KeyValuePair<char, GameObject> neighborPair in currentRoom.GetComponent<Room>().neighbors)
             {
-                if (neighborPair.Value && !cameFromDict.ContainsKey(neighborPair.Value.GetComponent<Room>()))
+                if (neighborPair.Value && !cameFromDict.ContainsKey(neighborPair.Value))
                 {
-                    Room nextRoom = neighborPair.Value.GetComponent<Room>();
+                    GameObject nextRoom = neighborPair.Value;
                     rooms.Enqueue(nextRoom);
                     cameFromDict.Add(nextRoom, currentRoom);
                     int totalKeysNeeded = keysNeededDict[currentRoom];
-                    totalKeysNeeded += (nextRoom.locked) ? 1 : 0;
+                    totalKeysNeeded += (nextRoom.GetComponent<Room>().locked) ? 1 : 0;
                     keysNeededDict.Add(nextRoom, totalKeysNeeded);
                 }
             }
@@ -181,13 +186,98 @@ public class RoomDirector : MonoBehaviour
         int loopIdx = 0;
         foreach (GameObject roomObj in activeRooms)
         {
-            Room room = roomObj.GetComponent<Room>();
+            GameObject room = roomObj;
             keycountOutput += string.Format("Room {0} requires {1} key{2}\n",
                 loopIdx, keysNeededDict[room], keysNeededDict[room] == 1 ? "" : "s");
             loopIdx++;
         }
         Debug.Log(keycountOutput);
 
+        /*** CREATE DICTIONARY THAT MAPS # OF KEYS NEEDED (defined by keysNeededDict)
+             TO A LIST OF ROOMS THAT NEED THAT SAME # OF KEYS
+         ***/
+        // Create a new dictionary mapping keys needed to array of rooms
+        Dictionary<int, List<GameObject>> keysToRoomDict = new Dictionary<int, List<GameObject>>();
+        // Fill up this array
+        foreach(KeyValuePair<GameObject, int> roomKeyPair in keysNeededDict)
+        {
+            // Do not include "End" room type
+            if (roomKeyPair.Key.GetComponent<Room>().roomType.Equals("End"))
+            {
+                continue;
+            }
+            if (!keysToRoomDict.ContainsKey(roomKeyPair.Value))
+            {
+                keysToRoomDict.Add(roomKeyPair.Value, new List<GameObject>());
+            }
+            keysToRoomDict[roomKeyPair.Value].Add(roomKeyPair.Key);
+        }
+
+        /*** PLACE KEYS HERE, GOING THROUGH EACH DICTIONARY ENTRY IN keysToRoomDict
+             AND PLACING 1 KEY IN A RANDOMLY CHOSEN SPOT + RANDOMLY CHOSEN ROOM
+         ***/
+        // Starting from value 0 to whatever value, place keys into every room
+        int totalKeysPlaced = 0;
+        Debug.Log(string.Format("keysToRoomDict Count = {0}", keysToRoomDict.Count));
+        foreach (KeyValuePair<int, List<GameObject>> keyRoomPair in keysToRoomDict)
+        {
+            // we do not want to place keys in rooms that require too many keys
+            if (keyRoomPair.Key - 1 >= numKeys)
+            {
+                Debug.Log(string.Format("Avoiding Placing Key Here: current KeysNeeded = {0} - 1 for numKeys = {1}", keyRoomPair, numKeys));
+                continue;
+            }
+            // Otherwise we choose randomly from the list of rooms
+            List<GameObject> currentRoomList = keyRoomPair.Value;
+            int chosenIndex = rng.Next(currentRoomList.Count);
+            GameObject chosenRoom = currentRoomList[chosenIndex];
+            bool keyPlaced = false;
+            while(!keyPlaced)
+            {
+                // Choose a random x and y position
+                int randomX = rng.Next(1, chosenRoom.GetComponent<Room>().roomSize - 1);
+                int randomY = rng.Next(1, chosenRoom.GetComponent<Room>().roomSize - 1);
+
+                // TODO: make it so that it checks if randomly selected location is floor vs wall
+
+                // Check if random location does not have an item. If so, place key there.
+                if (!chosenRoom.GetComponent<Room>().elements[randomX, randomY])
+                {
+                    EditElementInRoom(ref chosenRoom, randomX, randomY, key);
+                    totalKeysPlaced++;
+                    keyPlaced = true;
+                }
+            }
+        }
+
+        /*** If there were any keys that still need to be placed, do it here.
+         ***/
+        // The last thing to be done is if totalKeysPlaced is less than numKeys, place keys
+        //  in any room that requires 0 keys
+        while (totalKeysPlaced < numKeys)
+        {
+            Debug.Log("extra key was placed");
+            List<GameObject> currentRoomList = keysToRoomDict[0];
+            int chosenIndex = rng.Next(currentRoomList.Count);
+            GameObject chosenRoom = currentRoomList[chosenIndex];
+            bool keyPlaced = false;
+            while (!keyPlaced)
+            {
+                // Choose a random x and y position
+                int randomX = rng.Next(1, chosenRoom.GetComponent<Room>().roomSize - 1);
+                int randomY = rng.Next(1, chosenRoom.GetComponent<Room>().roomSize - 1);
+
+                // TODO: make it so that it checks if randomly selected location is floor vs wall
+
+                // Check if random location does not have an item. If so, place key there.
+                if (!chosenRoom.GetComponent<Room>().elements[randomX, randomY])
+                {
+                    EditElementInRoom(ref chosenRoom, randomX, randomY, key);
+                    totalKeysPlaced++;
+                    keyPlaced = true;
+                }
+            }
+        }
         return numKeys;
     }
 }
