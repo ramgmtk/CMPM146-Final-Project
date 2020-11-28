@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+using Random = System.Random;
+
 [RequireComponent(typeof(RoomGenerator))]
 public class RoomDirector : MonoBehaviour
 {
@@ -46,6 +48,14 @@ public class RoomDirector : MonoBehaviour
         //Sample function call
         //GameObject thisRoom = activeRooms[0];
         //EditElementInRoom(ref thisRoom, 5, 5, food);
+
+        // Create # of locked rooms (random # = 0 to whatever max)
+        int numberOfLockedRooms = GenerateLockedRooms(2);
+        Debug.Log(string.Format("Generated {0} locked room{1}.",
+            numberOfLockedRooms, numberOfLockedRooms == 1 ? "" : "s"));
+
+        // Here is where we should make a BFS algorithm that places keys where it needs to be placed.
+        PlaceKeys(numberOfLockedRooms);
     }
 
     //EditElementInRoom
@@ -103,4 +113,44 @@ public class RoomDirector : MonoBehaviour
             Destroy(replaced);
         }
     }
+
+    /** private GenerateLockedRooms
+     *  Parameters: int maxNumberOfLockedRooms - Maximum # of locked rooms (default: 0)
+     *              bool isRandomUpperLimit - Decides whether maxNumberOfLockedRooms is a random upper limit
+     *                                        or a fixed limit (default: true)
+     *  Return: int - number of locked rooms that were created
+     *  This function will generate a number of locked rooms.
+     */
+    private int GenerateLockedRooms(int maxNumberOfLockedRooms = 0, bool isRandomUpperLimit = true)
+	{
+        Random rng = new Random();
+        int limit = isRandomUpperLimit ? rng.Next(maxNumberOfLockedRooms + 1) : maxNumberOfLockedRooms;
+
+        int lockedRoomCount = 0;
+        while (lockedRoomCount < limit)
+		{
+            int chosenIndex = rng.Next(activeRooms.Count);
+            Room chosenRoom = activeRooms[chosenIndex].GetComponent<Room>();
+            if (chosenRoom.locked)
+			{
+                continue;
+			}
+            chosenRoom.SetLockStatus(true);
+            lockedRoomCount++;
+		}
+        return limit;
+    }
+
+    /** private PlaceKeys
+     *  Parameters: int numKeys - Number of keys that need to be placed
+     *  return: int - # of keys that were placed
+     *  
+     *  This function will run BFS search, in which we keep track of how many keys a room may need
+     *  to go through.
+     */
+     private int PlaceKeys(int numKeys)
+	{
+        Debug.Log("Not implemented!");
+        return numKeys;
+	}
 }
