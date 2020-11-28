@@ -122,35 +122,72 @@ public class RoomDirector : MonoBehaviour
      *  This function will generate a number of locked rooms.
      */
     private int GenerateLockedRooms(int maxNumberOfLockedRooms = 0, bool isRandomUpperLimit = true)
-	{
+    {
         Random rng = new Random();
         int limit = isRandomUpperLimit ? rng.Next(maxNumberOfLockedRooms + 1) : maxNumberOfLockedRooms;
 
         int lockedRoomCount = 0;
         while (lockedRoomCount < limit)
-		{
+        {
             int chosenIndex = rng.Next(activeRooms.Count);
             Room chosenRoom = activeRooms[chosenIndex].GetComponent<Room>();
             if (chosenRoom.locked)
-			{
+            {
                 continue;
-			}
+            }
             chosenRoom.SetLockStatus(true);
             lockedRoomCount++;
-		}
+        }
         return limit;
     }
 
-    /** private PlaceKeys
-     *  Parameters: int numKeys - Number of keys that need to be placed
-     *  return: int - # of keys that were placed
-     *  
-     *  This function will run BFS search, in which we keep track of how many keys a room may need
-     *  to go through.
-     */
-     private int PlaceKeys(int numKeys)
-	{
-        Debug.Log("Not implemented!");
+    /// private PlaceKeys
+    /// <summary>
+    /// This function will run BFS search and place keys in places that are needed.
+    /// </summary>
+    ///
+    /// <param name="numKeys">Number of keys to place.</param>
+    /// <returns>The number of keys that were placed.</returns>
+    private int PlaceKeys(int numKeys)
+    {
+        // BFS based off of: https://www.redblobgames.com/pathfinding/a-star/introduction.html
+        Room start = activeRooms[0].GetComponent<Room>();
+        Queue<Room> rooms = new Queue<Room>();
+        rooms.Enqueue(start);
+        Dictionary<Room, Room> cameFromDict = new Dictionary<Room, Room>();
+        cameFromDict.Add(start, null);
+        Dictionary<Room, int> keysNeededDict = new Dictionary<Room, int>();
+        keysNeededDict.Add(start, 0);
+
+        while (rooms.Count > 0)
+        {
+            Room currentRoom = rooms.Dequeue();
+            foreach(KeyValuePair<char, GameObject> neighborPair in currentRoom.neighbors)
+            {
+                if (neighborPair.Value && !cameFromDict.ContainsKey(neighborPair.Value.GetComponent<Room>()))
+                {
+                    Room nextRoom = neighborPair.Value.GetComponent<Room>();
+                    rooms.Enqueue(nextRoom);
+                    cameFromDict.Add(nextRoom, currentRoom);
+                    int totalKeysNeeded = keysNeededDict[currentRoom];
+                    totalKeysNeeded += (nextRoom.locked) ? 1 : 0;
+                    keysNeededDict.Add(nextRoom, totalKeysNeeded);
+                }
+            }
+        }
+
+        // DEBUG: Go through activeRooms and check the keysNeededDict
+        string keycountOutput = "";
+        int loopIdx = 0;
+        foreach (GameObject roomObj in activeRooms)
+        {
+            Room room = roomObj.GetComponent<Room>();
+            keycountOutput += string.Format("Room {0} requires {1} key{2}\n",
+                loopIdx, keysNeededDict[room], keysNeededDict[room] == 1 ? "" : "s");
+            loopIdx++;
+        }
+        Debug.Log(keycountOutput);
+
         return numKeys;
-	}
+    }
 }
