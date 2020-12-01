@@ -142,6 +142,27 @@ public class RoomDirector : MonoBehaviour
         return limit;
     }
 
+    // replaces a random tile with an element
+    private void AddElementRandomly(GameObject room, GameObject element){
+        Random rng = new Random();
+        bool elementPlaced = false;
+        while(!elementPlaced)
+        {
+            // Choose a random x and y position
+            int randomX = rng.Next(1, room.GetComponent<Room>().roomSize - 1);
+            int randomY = rng.Next(1, room.GetComponent<Room>().roomSize - 1);
+
+            // TODO: make it so that it checks if randomly selected location is floor vs wall
+
+            // Check if random location does not have an item. If so, place key there.
+            if (!room.GetComponent<Room>().elements[randomX, randomY])
+            {
+                EditElementInRoom(ref room, randomX, randomY, enemy);
+                elementPlaced = true;
+            }
+        }
+    }
+
     /// private PlaceKeys
     /// <summary>
     /// This function will run BFS search and place keys in places that are needed.
@@ -231,23 +252,8 @@ public class RoomDirector : MonoBehaviour
             List<GameObject> currentRoomList = keyRoomPair.Value;
             int chosenIndex = rng.Next(currentRoomList.Count);
             GameObject chosenRoom = currentRoomList[chosenIndex];
-            bool keyPlaced = false;
-            while(!keyPlaced)
-            {
-                // Choose a random x and y position
-                int randomX = rng.Next(1, chosenRoom.GetComponent<Room>().roomSize - 1);
-                int randomY = rng.Next(1, chosenRoom.GetComponent<Room>().roomSize - 1);
-
-                // TODO: make it so that it checks if randomly selected location is floor vs wall
-
-                // Check if random location does not have an item. If so, place key there.
-                if (!chosenRoom.GetComponent<Room>().elements[randomX, randomY])
-                {
-                    EditElementInRoom(ref chosenRoom, randomX, randomY, key);
-                    totalKeysPlaced++;
-                    keyPlaced = true;
-                }
-            }
+            AddElementRandomly(chosenRoom, key);
+            totalKeysPlaced++;
         }
 
         /*** If there were any keys that still need to be placed, do it here.
@@ -260,24 +266,33 @@ public class RoomDirector : MonoBehaviour
             List<GameObject> currentRoomList = keysToRoomDict[0];
             int chosenIndex = rng.Next(currentRoomList.Count);
             GameObject chosenRoom = currentRoomList[chosenIndex];
-            bool keyPlaced = false;
-            while (!keyPlaced)
-            {
-                // Choose a random x and y position
-                int randomX = rng.Next(1, chosenRoom.GetComponent<Room>().roomSize - 1);
-                int randomY = rng.Next(1, chosenRoom.GetComponent<Room>().roomSize - 1);
-
-                // TODO: make it so that it checks if randomly selected location is floor vs wall
-
-                // Check if random location does not have an item. If so, place key there.
-                if (!chosenRoom.GetComponent<Room>().elements[randomX, randomY])
-                {
-                    EditElementInRoom(ref chosenRoom, randomX, randomY, key);
-                    totalKeysPlaced++;
-                    keyPlaced = true;
-                }
-            }
+            AddElementRandomly(chosenRoom, key);
+            totalKeysPlaced++;
         }
         return numKeys;
+    }
+
+    private void GenerateEnemies()
+    {
+        Random rng = new Random();
+        int NumEnemies(int health)
+        {
+            if(health < 20){return rng.Next(2);}
+            else if(health < 40) {return rng.Next(1, 3);}
+            else if(health < 60) {return rng.Next(2, 4);}
+            else if(health < 80) {return rng.Next(2, 5);}
+            else {return rng.Next(3, 5);}
+        }
+
+        int playerHealth = ps.health;
+        foreach (GameObject roomObj in activeRooms)
+        {
+            GameObject room = roomObj; // is this necessary?
+            int numEnemies =  NumEnemies(playerHealth);
+            for(int i = 0; i<= numEnemies; i++)
+            {
+                AddElementRandomly(room, enemy);
+            }
+        }
     }
 }
