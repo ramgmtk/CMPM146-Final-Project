@@ -5,12 +5,16 @@ using UnityEngine;
 [RequireComponent(typeof(RoomGenerator))]
 public class PlayerPlanner : MonoBehaviour
 {
+    public bool plannerCanStart = false;
+    private GameObject player;
     private PlayerStats ps;
     private List<GameObject> rooms;
     private List<char> path;
     private GameObject startRoom;
     private GameObject endRoom;
+    private GameObject currentLocation;
     Dictionary<char, char> cardinal = new Dictionary<char, char>();
+    int moveCount = 0;
     
     //Personal MinHeap class creation
     class MinHeap<T>
@@ -22,7 +26,7 @@ public class PlayerPlanner : MonoBehaviour
             queue.Add((0f, default(T)));
             count = 0;
         }
-        public void Heapify(int index)
+        private void Heapify(int index)
         {
             if (2*index > this.count || 2*index + 1 > this.count) //maybe or should be and
             {
@@ -77,7 +81,7 @@ public class PlayerPlanner : MonoBehaviour
             return returnValue;
         }
 
-        public void IncreaseKey(int index, float priority)
+        private void IncreaseKey(int index, float priority)
         {
             queue[index] = (priority, queue[index].Item2);
             while (index != 1 && queue[index / 2].Item1 > queue[index].Item1)
@@ -100,8 +104,8 @@ public class PlayerPlanner : MonoBehaviour
     //End of minheap class
     void Start()
     {
-        rooms = GetComponent<RoomGenerator>().rooms;
-        ps = GameObject.FindWithTag("Player").GetComponent<PlayerStats>();
+        player = GameObject.FindWithTag("Player");
+        ps = player.GetComponent<PlayerStats>();
         cardinal.Add('W','E');
         cardinal.Add('N','S');
         cardinal.Add('E','W');
@@ -111,20 +115,99 @@ public class PlayerPlanner : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        
+        if (plannerCanStart && Input.GetKeyDown("space"))
+        {
+            DoMovement();
+        }
     }
 
-    private void InitializePlanner()
+    private void DoMovement()
     {
+        if (moveCount < path.Count)
+        {
+            GameObject nextLocation = currentLocation.GetComponent<Room>().neighbors[path[moveCount]];
+            currentLocation = nextLocation;
+            player.transform.position = new Vector3(currentLocation.transform.position.x, currentLocation.transform.position.y, player.transform.position.z);
+            moveCount++;
+        }
+    }
+    public void InitializePlanner()
+    {
+        rooms = GetComponent<RoomGenerator>().rooms;
+        Debug.Log(rooms.Count);
         startRoom = rooms[0];
         endRoom = rooms[rooms.Count - 1];
+        currentLocation = startRoom;
+        path = FindPath();
     }
 
-    /*private List<char> FindPath()
+    private List<char> FindPath()
     {
-        Dictionary<char, GameObject> pathPredecessor;
-        Queue pathQueue = new Queue();
-    }*/
+        MinHeap<GameObject> queue = new MinHeap<GameObject>();
+        Dictionary<GameObject, char> pathPredecessor = new Dictionary<GameObject, char>();
+        Dictionary<GameObject, float> pathCost = new Dictionary<GameObject, float>();
+        List<char> resultingPath = new List<char>();
+
+        queue.Insert((0, startRoom));
+        pathPredecessor.Add(startRoom, 'X');
+        pathCost.Add(startRoom, 0f);
+
+        while (queue.count > 0)
+        {
+            (float, GameObject) data = queue.ExtractMin();
+            GameObject currentRoom = data.Item2;
+            float currentCost = pathCost[currentRoom];
+
+            if (currentRoom == endRoom)
+            {
+                //Do stuff
+                char direction = pathPredecessor[currentRoom];
+                Debug.Log("Found End Room: " + pathPredecessor.Count);
+                Debug.Log(startRoom.GetComponent<Room>().roomType);
+                while (direction != 'X')
+                {
+                    resultingPath.Add(direction);
+                    currentRoom = currentRoom.GetComponent<Room>().neighbors[cardinal[direction]];
+                    direction = pathPredecessor[currentRoom];
+                }
+                resultingPath.Reverse();
+                Debug.Log("Assembled Path");
+                plannerCanStart = true;
+                break;
+            }
+
+            foreach(KeyValuePair<char, GameObject> neighbor in currentRoom.GetComponent<Room>().neighbors)
+            {
+                if (neighbor.Value ==  null)
+                {
+                    continue;
+                }
+                float travelCost = currentCost + 1f; //where 1 indicates the number of steps to get from the current room to this 1. Since rooms can only travel to their neighbors, we use the value 1.
+                if (!pathCost.ContainsKey(neighbor.Value) || pathCost[neighbor.Value] > travelCost)
+                {
+                    pathCost[neighbor.Value] = travelCost;
+                    float priority = travelCost + Heuristic(neighbor.Value);
+                    queue.Insert((priority, neighbor.Value));
+                    if (pathPredecessor.ContainsKey(neighbor.Value))
+                    {
+                        pathPredecessor[neighbor.Value] = neighbor.Key;
+                    }
+                    else
+                    {
+                        pathPredecessor.Add(neighbor.Value, neighbor.Key);
+                    }
+                }
+            }
+        }
+        return resultingPath;
+    }
+
+    private float Heuristic(GameObject currRoom)
+    {
+        //For now return the euclidean distance.
+        float val = Vector3.Distance(currRoom.transform.position, endRoom.transform.position);
+        return val;
+    }
 
 
 }

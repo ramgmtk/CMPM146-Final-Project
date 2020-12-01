@@ -11,6 +11,7 @@ public class GameModerator : MonoBehaviour
     public static GameModerator instance = null;
     private RoomGenerator rg;
     private RoomDirector rd;
+    private PlayerPlanner pp;
     // Start is called before the first frame update
     void Awake()
     {
@@ -25,6 +26,7 @@ public class GameModerator : MonoBehaviour
         DontDestroyOnLoad(gameObject);
         rg = GetComponent<RoomGenerator>();
         rd = GetComponent<RoomDirector>();
+        pp = GetComponent<PlayerPlanner>();
         InitGame();
         StartCoroutine(ModerateGame());
     }
@@ -39,5 +41,6 @@ public class GameModerator : MonoBehaviour
     {
         yield return new WaitUntil(() => rg.dungeonGenerated == true);
         rd.DoStuff();
+        pp.InitializePlanner();
     }
 }
