@@ -45,18 +45,20 @@ public class RoomDirector : MonoBehaviour
     //This is the main function we will be working in. Make all of your respective function calls from here.
     public void DoStuff()
     {
-        Debug.Log(ps.health); //Example of accessing the player stats.
+        //Debug.Log(ps.health); //Example of accessing the player stats.
         //Sample function call
         //GameObject thisRoom = activeRooms[0];
         //EditElementInRoom(ref thisRoom, 5, 5, food);
 
         // Create # of locked rooms (random # = 0 to whatever max)
         int numberOfLockedRooms = GenerateLockedRooms(2);
-        Debug.Log(string.Format("Generated {0} locked room{1}.",
-            numberOfLockedRooms, numberOfLockedRooms == 1 ? "" : "s"));
+        //Debug.Log(string.Format("Generated {0} locked room{1}.",
+            //numberOfLockedRooms, numberOfLockedRooms == 1 ? "" : "s"));
 
         // Here is where we should make a BFS algorithm that places keys where it needs to be placed.
-        Debug.Log(string.Format("Keys placed = {0}", PlaceKeys(numberOfLockedRooms + 1)));
+        //Debug.Log(string.Format("Keys placed = {0}", PlaceKeys(numberOfLockedRooms + 1)));
+        int amountOfKeys = PlaceKeys(numberOfLockedRooms + 1);
+        GenerateEnemies();
     }
 
     //EditElementInRoom
@@ -66,7 +68,7 @@ public class RoomDirector : MonoBehaviour
     //The newObject is then added to the rooms elements array, providing a reference to it.
     //THIS SHOULD BE USED TOO ADD THINGS SUCH AS KEYS, ENEMIES, ETC. TO THE LEVEL.
     //Do not edit this method, it is a helper method that should do what is exatly as described.
-    private void EditElementInRoom(ref GameObject room, int x, int y, GameObject newObject)
+    public void EditElementInRoom(ref GameObject room, int x, int y, GameObject newObject)
     {
         if (x == 0 || x == roomSize || y == 0 || y == roomSize)
         {
@@ -157,7 +159,7 @@ public class RoomDirector : MonoBehaviour
             // Check if random location does not have an item. If so, place key there.
             if (!room.GetComponent<Room>().elements[randomX, randomY])
             {
-                EditElementInRoom(ref room, randomX, randomY, enemy);
+                EditElementInRoom(ref room, randomX, randomY, element);
                 elementPlaced = true;
             }
         }
@@ -212,7 +214,7 @@ public class RoomDirector : MonoBehaviour
                 loopIdx, keysNeededDict[room], keysNeededDict[room] == 1 ? "" : "s");
             loopIdx++;
         }
-        Debug.Log(keycountOutput);
+        //Debug.Log(keycountOutput);
 
         /*** CREATE DICTIONARY THAT MAPS # OF KEYS NEEDED (defined by keysNeededDict)
              TO A LIST OF ROOMS THAT NEED THAT SAME # OF KEYS
@@ -239,7 +241,7 @@ public class RoomDirector : MonoBehaviour
          ***/
         // Starting from value 0 to whatever value, place keys into every room
         int totalKeysPlaced = 0;
-        Debug.Log(string.Format("keysToRoomDict Count = {0}", keysToRoomDict.Count));
+        //Debug.Log(string.Format("keysToRoomDict Count = {0}", keysToRoomDict.Count));
         foreach (KeyValuePair<int, List<GameObject>> keyRoomPair in keysToRoomDict)
         {
             // we do not want to place keys in rooms that require too many keys
@@ -277,17 +279,19 @@ public class RoomDirector : MonoBehaviour
         Random rng = new Random();
         int NumEnemies(int health)
         {
-            if(health < 20){return rng.Next(2);}
-            else if(health < 40) {return rng.Next(1, 3);}
-            else if(health < 60) {return rng.Next(2, 4);}
-            else if(health < 80) {return rng.Next(2, 5);}
-            else {return rng.Next(3, 5);}
+            if(health < 20){return rng.Next(0, 1);}
+            else if(health < 60) {return rng.Next(0, 2);}
+            else {return rng.Next(0, 3);}
         }
 
         int playerHealth = ps.health;
         foreach (GameObject roomObj in activeRooms)
         {
             GameObject room = roomObj; // is this necessary?
+            if (room.GetComponent<Room>().roomType == "Start" || room.GetComponent<Room>().roomType == "End")
+            {
+                continue;
+            }
             int numEnemies =  NumEnemies(playerHealth);
             for(int i = 0; i<= numEnemies; i++)
             {

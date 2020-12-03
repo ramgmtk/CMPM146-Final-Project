@@ -5,9 +5,12 @@ using UnityEngine;
 [RequireComponent(typeof(RoomGenerator))]
 public class PlayerPlanner : MonoBehaviour
 {
-    public bool plannerCanStart = false;
+    public int enemyDamage = 5;
+    public int keyWeight = 100;
+    [HideInInspector]public bool plannerCanStart = false;
     private GameObject player;
     private PlayerStats ps;
+    private DramaManager dm;
     private List<GameObject> rooms;
     private List<char> path;
     private GameObject startRoom;
@@ -106,10 +109,12 @@ public class PlayerPlanner : MonoBehaviour
     {
         player = GameObject.FindWithTag("Player");
         ps = player.GetComponent<PlayerStats>();
+        dm = GetComponent<DramaManager>();
         cardinal.Add('W','E');
         cardinal.Add('N','S');
         cardinal.Add('E','W');
         cardinal.Add('S','N');
+
     }
 
     // Update is called once per frame
@@ -128,42 +133,55 @@ public class PlayerPlanner : MonoBehaviour
             GameObject nextLocation = currentLocation.GetComponent<Room>().neighbors[path[moveCount]];
             currentLocation = nextLocation;
             player.transform.position = new Vector3(currentLocation.transform.position.x, currentLocation.transform.position.y, player.transform.position.z);
+            dm.DramatizeRoom(ref currentLocation, ref ps);
+            dm.UpdateRoom(ref currentLocation, ref ps);
+            //Do drama management
             moveCount++;
         }
     }
     public void InitializePlanner()
     {
         rooms = GetComponent<RoomGenerator>().rooms;
-        Debug.Log(rooms.Count);
         startRoom = rooms[0];
         endRoom = rooms[rooms.Count - 1];
         currentLocation = startRoom;
+        dm.UpdateRoom(ref currentLocation, ref ps); //Special case of first room. Because I am lazy. It just checks if a key/enemy are in first room and updates the player accordingly.
         path = FindPath();
     }
 
     private List<char> FindPath()
     {
-        MinHeap<GameObject> queue = new MinHeap<GameObject>();
+        MinHeap<(GameObject, StatContainer)> queue = new MinHeap<(GameObject, StatContainer)>();
         Dictionary<GameObject, char> pathPredecessor = new Dictionary<GameObject, char>();
         Dictionary<GameObject, float> pathCost = new Dictionary<GameObject, float>();
         List<char> resultingPath = new List<char>();
 
-        queue.Insert((0, startRoom));
+        Dictionary<GameObject, bool> initVisited = new Dictionary<GameObject, bool>();
+        //initVisited.Add(startRoom, true);
+        StatContainer initPlayer = new StatContainer(ps.health, ps.keyCount, initVisited);
+
+        queue.Insert((0, (startRoom, initPlayer)));
         pathPredecessor.Add(startRoom, 'X');
         pathCost.Add(startRoom, 0f);
 
         while (queue.count > 0)
         {
-            (float, GameObject) data = queue.ExtractMin();
-            GameObject currentRoom = data.Item2;
+            (float, (GameObject, StatContainer)) data = queue.ExtractMin();
+            GameObject currentRoom = data.Item2.Item1;
+            StatContainer currentPlayer = data.Item2.Item2;
+            if (currentPlayer.visited.ContainsKey(currentRoom))
+            {
+                currentPlayer.visited[currentRoom] = true;
+            }
+            else
+            {
+                currentPlayer.visited.Add(currentRoom, true);
+            }
             float currentCost = pathCost[currentRoom];
 
             if (currentRoom == endRoom)
             {
-                //Do stuff
                 char direction = pathPredecessor[currentRoom];
-                Debug.Log("Found End Room: " + pathPredecessor.Count);
-                Debug.Log(startRoom.GetComponent<Room>().roomType);
                 while (direction != 'X')
                 {
                     resultingPath.Add(direction);
@@ -171,23 +189,25 @@ public class PlayerPlanner : MonoBehaviour
                     direction = pathPredecessor[currentRoom];
                 }
                 resultingPath.Reverse();
-                Debug.Log("Assembled Path");
-                plannerCanStart = true;
+                plannerCanStart = true; //consider moving this to after this entire function is finished. There is a error that could occur if player spams space on first frame.
                 break;
             }
 
             foreach(KeyValuePair<char, GameObject> neighbor in currentRoom.GetComponent<Room>().neighbors)
             {
-                if (neighbor.Value ==  null)
+                if (neighbor.Value == null) //Right now this causes an error || (neighbor.Value.GetComponent<Room>().locked && currentPlayer.keyCount == 0))
                 {
+                    Debug.Log("Stuck in this");
                     continue;
                 }
+                Debug.Log("Now in this");
                 float travelCost = currentCost + 1f; //where 1 indicates the number of steps to get from the current room to this 1. Since rooms can only travel to their neighbors, we use the value 1.
                 if (!pathCost.ContainsKey(neighbor.Value) || pathCost[neighbor.Value] > travelCost)
                 {
+                    StatContainer futureStats = new StatContainer(currentPlayer.health, currentPlayer.keyCount, currentPlayer.visited);
                     pathCost[neighbor.Value] = travelCost;
-                    float priority = travelCost + Heuristic(neighbor.Value);
-                    queue.Insert((priority, neighbor.Value));
+                    float priority = travelCost + Heuristic(neighbor.Value, ref futureStats);
+                    queue.Insert((priority, (neighbor.Value, currentPlayer)));
                     if (pathPredecessor.ContainsKey(neighbor.Value))
                     {
                         pathPredecessor[neighbor.Value] = neighbor.Key;
@@ -199,15 +219,59 @@ public class PlayerPlanner : MonoBehaviour
                 }
             }
         }
+        Debug.Log(resultingPath.Count);
         return resultingPath;
     }
 
-    private float Heuristic(GameObject currRoom)
+    private float Heuristic(GameObject nextRoom, ref StatContainer futureStats)
     {
         //For now return the euclidean distance.
-        float val = Vector3.Distance(currRoom.transform.position, endRoom.transform.position);
+        float val = Vector3.Distance(nextRoom.transform.position, endRoom.transform.position);
+        if (!futureStats.visited.ContainsKey(nextRoom))
+        {
+            GameObject[,] currElements = nextRoom.GetComponent<Room>().elements;
+            int keys = 0;
+            int enemies  = 0;
+            for(int i = 0; i < currElements.GetLength(0); i++)
+            {
+                for (int j = 0; j < currElements.GetLength(1); j++)
+                {
+                    if (currElements[i,j] != null)
+                    {
+                        if (currElements[i,j].tag == "Enemy")
+                        {
+                            enemies += 1;
+                        }
+                        else if (currElements[i,j].tag == "Key")
+                        {
+                            keys += 1;
+                        }
+                    }
+                }
+            }
+            //check if it is a locked door
+            if (nextRoom.GetComponent<Room>().locked)
+            {
+                if (futureStats.keyCount == 0)
+                {
+                    return float.PositiveInfinity;
+                }
+                else
+                {
+                    futureStats.keyCount -= 1;
+                }
+            }
+            //update keys
+            futureStats.keyCount += keys;
+            val = val - (keys * keyWeight);
+            
+            futureStats.health = futureStats.health - (enemies * enemyDamage);
+            val = val + (enemies * enemyDamage);
+            if (futureStats.health <= 0)
+            {
+                return float.PositiveInfinity;
+            }
+        }
         return val;
     }
-
-
 }
