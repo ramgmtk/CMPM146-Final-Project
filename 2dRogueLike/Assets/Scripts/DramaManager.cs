@@ -6,6 +6,9 @@ using UnityEngine;
 public class DramaManager : MonoBehaviour
 {
     public float dramaMeter;
+    public GameObject food;
+    public GameObject enemy;
+    public GameObject key;
     private RoomDirector rd;
     private PlayerPlanner pp;
     // Start is called before the first frame update
@@ -61,6 +64,9 @@ public class DramaManager : MonoBehaviour
     public void DramatizeRoom(ref GameObject room, ref PlayerStats player)
     {
         //Fill in code here
+        //user rd.EditElementInRoom(room, xpos, ypos, GameObjectToBeAdded) to add new elements to a room at position x,y
+        //let GameObjectToBeAdded = null if you want to remove an element at that x y coord.
+        //valid gameobjects that can passed are the public GameObject member variables listed at the top of this file. ex: key.
         return;
     }
 }
