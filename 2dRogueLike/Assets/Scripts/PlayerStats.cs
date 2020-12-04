@@ -23,4 +23,42 @@ public class StatContainer
         keyCount = k;
         visited = new Dictionary<GameObject, bool>(d);
     }
+
+    public override bool Equals(object o)
+    {
+        if (o == null || GetType() != o.GetType())
+        {
+            return false;
+        }
+        StatContainer obj = (StatContainer) o;
+        return this == (StatContainer)o;
+    }
+    public static bool operator ==(StatContainer lhs, StatContainer rhs)
+    {
+        if (lhs.health== rhs.health && lhs.keyCount == rhs.keyCount)
+        {
+            return true;
+        }
+        return false;
+    }
+    public static bool operator !=(StatContainer lhs, StatContainer rhs)
+    {
+        if (lhs.health != rhs.health && lhs.keyCount != rhs.keyCount)
+        {
+            foreach(KeyValuePair<GameObject, bool> visit in lhs.visited)
+            {
+                if (!rhs.visited.ContainsKey(visit.Key))
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+        return false;;
+    }
+
+    public override int GetHashCode() 
+    {
+            return base.GetHashCode();
+    }
 }

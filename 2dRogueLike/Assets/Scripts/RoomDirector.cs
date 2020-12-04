@@ -145,7 +145,7 @@ public class RoomDirector : MonoBehaviour
     }
 
     // replaces a random tile with an element
-    private void AddElementRandomly(GameObject room, GameObject element){
+    public void AddElementRandomly(GameObject room, GameObject element){
         Random rng = new Random();
         bool elementPlaced = false;
         while(!elementPlaced)
