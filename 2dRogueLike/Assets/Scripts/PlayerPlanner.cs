@@ -18,6 +18,7 @@ public class PlayerPlanner : MonoBehaviour
     private GameObject currentLocation;
     Dictionary<char, char> cardinal = new Dictionary<char, char>();
     int moveCount = 0;
+    bool roomDramatized = false;
     
     //Personal MinHeap class creation
     class MinHeap<T>
@@ -173,13 +174,20 @@ public class PlayerPlanner : MonoBehaviour
     {
         if (moveCount < path.Count)
         {
-            GameObject nextLocation = currentLocation.GetComponent<Room>().neighbors[path[moveCount]];
-            currentLocation = nextLocation;
-            player.transform.position = new Vector3(currentLocation.transform.position.x, currentLocation.transform.position.y, player.transform.position.z);
-            dm.DramatizeRoom(ref currentLocation, ref ps);
-            dm.UpdateRoom(ref currentLocation, ref ps);
-            //Do drama management
-            moveCount++;
+            if (!roomDramatized)
+            {
+                GameObject nextLocation = currentLocation.GetComponent<Room>().neighbors[path[moveCount]];
+                currentLocation = nextLocation;
+                dm.DramatizeRoom(ref currentLocation, ref ps);
+                roomDramatized = true;
+            }
+            else
+            {
+                player.transform.position = new Vector3(currentLocation.transform.position.x, currentLocation.transform.position.y, player.transform.position.z);
+                dm.UpdateRoom(ref currentLocation, ref ps);
+                moveCount++;
+                roomDramatized = false;
+            }
         }
         else
         {
