@@ -48,7 +48,8 @@ public class DramaManager : MonoBehaviour
                     if (currentElements[i, j].tag == "Enemy")
                     {
                         player.health = player.health - pp.enemyDamage;
-                        UpdateDramaMeter((float)(100 - player.health) / 10);
+                        player.enemiesEncountered += 1;
+                        UpdateDramaMeter(ref player);
                     }
                     else if (currentElements[i, j].tag == "Key")
                     {
@@ -57,21 +58,37 @@ public class DramaManager : MonoBehaviour
                     else if (currentElements[i, j].tag == "Food")
                     {
                         player.health +=  5;
-                        UpdateDramaMeter(-5);
+                        UpdateDramaMeter(ref player);
                     }
                     rd.EditElementInRoom(ref room, i, j, null);
                 }
             }
         }
+        player.roomCount += 1;
         Debug.Log(string.Format(
-            "After Room Visit; PlayerStats = {0}HP, {1} keys; dramaMeter at {2}",
-            player.health, player.keyCount, dramaMeter));
+            "After Room Visit; PlayerStats = {0} HP, {1} keys, {2} enemies encountered, {3} rooms visited; dramaMeter at {4}",
+            player.health, player.keyCount, player.enemiesEncountered, player.roomCount, dramaMeter));
     }
 
     public void DramatizeRoom(ref GameObject room, ref PlayerStats player)
     {
         //Fill in code here
         System.Random rng = new System.Random();
+        int NumEnemies()
+        {
+            if(dramaMeter < 10)
+            {
+                return rng.Next(3, 7);
+            }
+            else if(dramaMeter < 35)
+            {
+                return rng.Next(1, 4);
+            }
+            else {
+                return rng.Next(0, 2);
+            }
+        }
+
         /** Phases for drama
          * Increasing Intensity
          *  - Add more enemies in next room
@@ -79,10 +96,10 @@ public class DramaManager : MonoBehaviour
          *  - Add Food and fewer/no enemies
         */
         // Increasing Intensity Phase - Add more enemies
-        if (dramaMeter < 40)
+        if (dramaMeter < 60)
 		{
             // Set # of enemies to spawn from 0 to dramaMeter
-            int numEnemyCount = rng.Next((int)dramaMeter);
+            int numEnemyCount = NumEnemies();
             // Clamp this number so that we don't overgenerate too many enemies
             const int UPPER_ENEMY_LIMIT = 8;
             if (numEnemyCount > UPPER_ENEMY_LIMIT)
@@ -126,18 +143,40 @@ public class DramaManager : MonoBehaviour
         return;
     }
 
-    /// <summary>
-	/// Updates the dramaMeter field, restricting it to
-	/// MAX_DRAMAMETER
-	/// </summary>
-	/// <param name="delta">how much to change (additive)</param>
-    public void UpdateDramaMeter(float delta = 0)
+    // Player stats: heatlh, keyCount, enemiesEncountered, roomCount
+    public void UpdateDramaMeter(ref PlayerStats player)
 	{
-        float newDramaMeter = dramaMeter + delta;
+        float newDramaMeter = dramaMeter;
+        
+        // increase drama as more rooms are explored
+        // int increasingIntesity = 0.5 * player.roomCount * player.roomCount;
+        int increasingIntesity = 2 * player.roomCount;
+
+        newDramaMeter = 100 - player.health - increasingIntesity;
+
         if (newDramaMeter > MAX_DRAMAMETER)
 		{
             newDramaMeter = MAX_DRAMAMETER;
 		}
+        if (newDramaMeter < 0)
+        {
+            newDramaMeter = 0;
+        }
         dramaMeter = newDramaMeter;
 	}
+
+    // /// <summary>
+	// /// Updates the dramaMeter field, restricting it to
+	// /// MAX_DRAMAMETER
+	// /// </summary>
+	// /// <param name="delta">how much to change (additive)</param>
+    // public void UpdateDramaMeter(float delta = 0)
+	// {
+    //     float newDramaMeter = dramaMeter + delta;
+    //     if (newDramaMeter > MAX_DRAMAMETER)
+	// 	{
+    //         newDramaMeter = MAX_DRAMAMETER;
+	// 	}
+    //     dramaMeter = newDramaMeter;
+	// }
 }

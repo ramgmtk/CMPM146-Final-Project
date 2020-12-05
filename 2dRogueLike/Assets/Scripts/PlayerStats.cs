@@ -10,17 +10,23 @@ public class PlayerStats : MonoBehaviour
 {
     public int health = 100;
     public int keyCount = 0;
+    public int enemiesEncountered = 0;
+    public int roomCount = 0;
 }
 
 public class StatContainer
 {
     public int health;
     public int keyCount;
+    public int enemiesEncountered;
+    public int roomCount;
     public Dictionary<GameObject, bool> visited = new Dictionary<GameObject, bool>();
-    public StatContainer(int h, int k, Dictionary<GameObject, bool> d)
+    public StatContainer(int h, int k, int e, int r, Dictionary<GameObject, bool> d)
     {
         health = h;
         keyCount = k;
+        enemiesEncountered = e;
+        roomCount = r;
         visited = new Dictionary<GameObject, bool>(d);
     }
 
@@ -35,7 +41,7 @@ public class StatContainer
     }
     public static bool operator ==(StatContainer lhs, StatContainer rhs)
     {
-        if (lhs.health== rhs.health && lhs.keyCount == rhs.keyCount)
+        if (lhs.health== rhs.health && lhs.keyCount == rhs.keyCount && lhs.enemiesEncountered == rhs.enemiesEncountered && lhs.roomCount == rhs.roomCount)
         {
             return true;
         }
@@ -43,7 +49,7 @@ public class StatContainer
     }
     public static bool operator !=(StatContainer lhs, StatContainer rhs)
     {
-        if (lhs.health != rhs.health && lhs.keyCount != rhs.keyCount)
+        if (lhs.health != rhs.health && lhs.keyCount != rhs.keyCount && lhs.enemiesEncountered != rhs.enemiesEncountered && lhs.roomCount != rhs.roomCount)
         {
             foreach(KeyValuePair<GameObject, bool> visit in lhs.visited)
             {

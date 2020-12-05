@@ -279,9 +279,17 @@ public class RoomDirector : MonoBehaviour
         Random rng = new Random();
         int NumEnemies(int health)
         {
-            if(health < 20){return rng.Next(0, 1);}
-            else if(health < 60) {return rng.Next(0, 2);}
-            else {return rng.Next(0, 3);}
+            if(health < 20)
+            {
+                return rng.Next(0, 1);
+            }
+            else if(health < 60)
+            {
+                return rng.Next(0, 2);
+            }
+            else {
+                return rng.Next(0, 3);
+            }
         }
 
         int playerHealth = ps.health;
