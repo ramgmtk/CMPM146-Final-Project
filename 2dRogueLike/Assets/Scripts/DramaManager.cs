@@ -49,7 +49,7 @@ public class DramaManager : MonoBehaviour
                     {
                         player.health = player.health - pp.enemyDamage;
                         player.enemiesEncountered += 1;
-                        UpdateDramaMeter(ref player);
+                        //UpdateDramaMeter(ref player);
                     }
                     else if (currentElements[i, j].tag == "Key")
                     {
@@ -58,12 +58,13 @@ public class DramaManager : MonoBehaviour
                     else if (currentElements[i, j].tag == "Food")
                     {
                         player.health +=  5;
-                        UpdateDramaMeter(ref player);
+                        //UpdateDramaMeter(ref player);
                     }
                     rd.EditElementInRoom(ref room, i, j, null);
                 }
             }
         }
+        UpdateDramaMeter(ref player);
         if (!player.visited.ContainsKey(room))
         {
             player.roomCount += 1;

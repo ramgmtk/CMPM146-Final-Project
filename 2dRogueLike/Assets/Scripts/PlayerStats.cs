@@ -44,14 +44,6 @@ public class StatContainer
     {
         if (lhs.health== rhs.health && lhs.keyCount == rhs.keyCount && lhs.enemiesEncountered == rhs.enemiesEncountered && lhs.roomCount == rhs.roomCount)
         {
-            return true;
-        }
-        return false;
-    }
-    public static bool operator !=(StatContainer lhs, StatContainer rhs)
-    {
-        if (lhs.health != rhs.health && lhs.keyCount != rhs.keyCount && lhs.enemiesEncountered != rhs.enemiesEncountered && lhs.roomCount != rhs.roomCount)
-        {
             foreach(KeyValuePair<GameObject, bool> visit in lhs.visited)
             {
                 if (!rhs.visited.ContainsKey(visit.Key))
@@ -61,7 +53,27 @@ public class StatContainer
             }
             return true;
         }
-        return false;;
+        return false;
+    }
+    public static bool operator !=(StatContainer lhs, StatContainer rhs)
+    {
+        if (lhs.health != rhs.health || lhs.keyCount != rhs.keyCount || lhs.enemiesEncountered != rhs.enemiesEncountered || lhs.roomCount != rhs.roomCount)
+        {
+            return true;
+        }
+        int equalityCount = 0;
+        foreach(KeyValuePair<GameObject, bool> visit in lhs.visited)
+        {
+            if (rhs.visited.ContainsKey(visit.Key))
+            {
+                equalityCount++;
+            }
+        }
+        if (equalityCount != lhs.visited.Count)
+        {
+            return true;
+        }
+        return false;
     }
 
     public override int GetHashCode() 
