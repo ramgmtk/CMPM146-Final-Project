@@ -64,7 +64,11 @@ public class DramaManager : MonoBehaviour
                 }
             }
         }
-        player.roomCount += 1;
+        if (!player.visited.ContainsKey(room))
+        {
+            player.roomCount += 1;
+            player.visited.Add(room, true);
+        }
         Debug.Log(string.Format(
             "After Room Visit; PlayerStats = {0} HP, {1} keys, {2} enemies encountered, {3} rooms visited; dramaMeter at {4}",
             player.health, player.keyCount, player.enemiesEncountered, player.roomCount, dramaMeter));
@@ -72,6 +76,10 @@ public class DramaManager : MonoBehaviour
 
     public void DramatizeRoom(ref GameObject room, ref PlayerStats player)
     {
+        if (player.visited.ContainsKey(room))
+        {
+            return;
+        }
         //Fill in code here
         System.Random rng = new System.Random();
         int NumEnemies()

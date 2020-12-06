@@ -12,6 +12,7 @@ public class PlayerStats : MonoBehaviour
     public int keyCount = 0;
     public int enemiesEncountered = 0;
     public int roomCount = 0;
+    public Dictionary<GameObject, bool> visited = new Dictionary<GameObject, bool>();
 }
 
 public class StatContainer
