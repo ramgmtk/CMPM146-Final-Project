@@ -19,7 +19,7 @@ public class PlayerPlanner : MonoBehaviour
     Dictionary<char, char> cardinal = new Dictionary<char, char>();
     int moveCount = 0;
     bool roomDramatized = false;
-    
+
     //Personal MinHeap class creation
     class MinHeap<T>
     {
@@ -115,7 +115,7 @@ public class PlayerPlanner : MonoBehaviour
         public State(GameObject r, StatContainer s)
         {
             room = r;
-            stats = new StatContainer(s.health, s.keyCount, s.enemiesEncountered, s.roomCount, s.visited);
+            stats = new StatContainer(s.health, s.keyCount, s.enemiesEncountered, s.roomCount, s.upgrades, s.visited);
         }
 
         public override bool Equals(object o)
@@ -144,7 +144,7 @@ public class PlayerPlanner : MonoBehaviour
             return false;;
         }
 
-        public override int GetHashCode() 
+        public override int GetHashCode()
         {
             return base.GetHashCode();
         }
@@ -213,7 +213,7 @@ public class PlayerPlanner : MonoBehaviour
 
         Dictionary<GameObject, bool> initVisited = new Dictionary<GameObject, bool>();
         //initVisited.Add(startRoom, true);
-        StatContainer initPlayer = new StatContainer(ps.health, ps.keyCount, ps.enemiesEncountered, ps.roomCount, initVisited);
+        StatContainer initPlayer = new StatContainer(ps.health, ps.keyCount, ps.enemiesEncountered, ps.roomCount, ps.upgrades, initVisited);
         State initState = new State(startRoom, initPlayer);
         queue.Insert((0, initState));
         pathPredecessor.Add(initState, ('X', null)); //since we visit a room multiple times, the key can't jsut be the room but the instead must be the state
@@ -263,7 +263,7 @@ public class PlayerPlanner : MonoBehaviour
                 EvaluateRoom(ref nextState);
                 if (!pathCost.ContainsKey(nextState) || pathCost[nextState] > travelCost) // || THE KEYCOUNT IS GREATER!
                 {
-                    StatContainer futureStats = new StatContainer(currentPlayer.health, currentPlayer.keyCount, currentPlayer.enemiesEncountered, currentPlayer.roomCount, currentPlayer.visited);
+                    StatContainer futureStats = new StatContainer(currentPlayer.health, currentPlayer.keyCount, currentPlayer.enemiesEncountered, currentPlayer.roomCount, currentPlayer.upgrades, currentPlayer.visited);
                     pathCost[nextState] = travelCost;
                     float priority = travelCost + Heuristic(neighbor.Value, ref futureStats);
                     queue.Insert((priority, nextState));

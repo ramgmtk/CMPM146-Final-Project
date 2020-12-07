@@ -14,12 +14,13 @@ public class DramaManager : MonoBehaviour
     {
         rd = GetComponent<RoomDirector>();
         pp = GetComponent<PlayerPlanner>();
+
     }
 
     // Update is called once per frame
     void Update()
     {
-        
+
     }
 
     //Update a room that a player visits
@@ -47,7 +48,8 @@ public class DramaManager : MonoBehaviour
                     // UpdateDramaMeter(float) used to update dramaMeter
                     if (currentElements[i, j].tag == "Enemy")
                     {
-                        player.health = player.health - pp.enemyDamage;
+                        //subtract player health from enemy damage, blocking by how many upgrades the player has
+                        player.health = player.health - pp.enemyDamage + player.upgrades;
                         player.enemiesEncountered += 1;
                         //UpdateDramaMeter(ref player);
                     }
@@ -63,6 +65,12 @@ public class DramaManager : MonoBehaviour
                     rd.EditElementInRoom(ref room, i, j, null);
                 }
             }
+        }
+        //After you encounter 10 enemies, upgrade
+        if (player.enemiesEncountered - player.upgrades*10 >= 10)
+        {
+          player.upgrades += 1;
+          Debug.Log(string.Format("Upgrade! {0}", player.upgrades));
         }
         UpdateDramaMeter(ref player);
         if (!player.visited.ContainsKey(room))
@@ -85,16 +93,16 @@ public class DramaManager : MonoBehaviour
         System.Random rng = new System.Random();
         int NumEnemies()
         {
-            if(dramaMeter < 10)
+            if(dramaMeter < 20)
             {
                 return rng.Next(3, 7);
             }
-            else if(dramaMeter < 35)
+            else if(dramaMeter < 45)
             {
-                return rng.Next(1, 4);
+                return rng.Next(2, 4);
             }
             else {
-                return rng.Next(0, 2);
+                return rng.Next(1, 2);
             }
         }
 
@@ -121,6 +129,21 @@ public class DramaManager : MonoBehaviour
                 rd.AddElementRandomly(room, rd.enemy);
 			}
             Debug.Log(string.Format("Enemies added: {0}", numEnemyCount));
+
+            int numFoodCount = 0;
+            if(player.health < 40)
+            {
+                numFoodCount = 4;
+            }
+            else if(player.health < 20)
+            {
+              numFoodCount = 5;
+            }
+            for (int i = 0; i < numFoodCount; i++)
+            {
+              rd.AddElementRandomly(room, rd.food);
+            }
+            Debug.Log(string.Format("Food added: {0}", numFoodCount));
 		}
         else
 		{
@@ -132,7 +155,7 @@ public class DramaManager : MonoBehaviour
 			}
             else if (player.health < 50)
 			{
-                numFoodCount = 5;
+                numFoodCount = 6;
 			}
             else if (player.health < 75)
 			{
@@ -148,7 +171,7 @@ public class DramaManager : MonoBehaviour
 			}
             Debug.Log(string.Format("Food added: {0}", numFoodCount));
 		}
-        
+
         return;
     }
 
@@ -156,12 +179,29 @@ public class DramaManager : MonoBehaviour
     public void UpdateDramaMeter(ref PlayerStats player)
 	{
         float newDramaMeter = dramaMeter;
-        
-        // increase drama as more rooms are explored
-        // int increasingIntesity = 0.5 * player.roomCount * player.roomCount;
-        int increasingIntesity = 2 * player.roomCount;
 
-        newDramaMeter = 100 - player.health - increasingIntesity;
+        // increase drama as more rooms are explored
+        // ########################
+        // Thought for increasing
+        // At the beginning there should not be many enemies
+        // Depending on health for the next coulpe rooms will decide the next Drama
+        // As you continue, drama will increase, but if you are low health decrease drama inorder to gain health
+        // ########################
+        // int increasingIntesity = 0.5 * player.roomCount * player.roomCount;
+        int increasingIntesity = 10 * player.roomCount;
+
+        if(player.health == 100){
+            newDramaMeter = 100 - player.health*.55f - increasingIntesity;
+        }
+        else if(player.health > 25)
+        {
+            newDramaMeter = 100 - player.health*.8f - increasingIntesity;
+        }
+        else
+        {
+          newDramaMeter = 100 - increasingIntesity + player.health;
+        }
+
 
         if (newDramaMeter > MAX_DRAMAMETER)
 		{
