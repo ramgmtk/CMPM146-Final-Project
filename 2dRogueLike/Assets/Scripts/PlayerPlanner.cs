@@ -254,7 +254,7 @@ public class PlayerPlanner : MonoBehaviour
 
             foreach(KeyValuePair<char, GameObject> neighbor in currentRoom.GetComponent<Room>().neighbors)
             {
-                if (neighbor.Value == null || (neighbor.Value.GetComponent<Room>().locked && currentPlayer.keyCount < 1))
+                if (ConstraintCheck(neighbor.Value, ref currentPlayer))//(neighbor.Value == null || (neighbor.Value.GetComponent<Room>().locked && currentPlayer.keyCount < 1))
                 {
                     continue;
                 }
@@ -326,5 +326,18 @@ public class PlayerPlanner : MonoBehaviour
         st.stats.keyCount += keys;
 
         st.stats.health -= enemies * enemyDamage;
+    }
+
+    private bool ConstraintCheck(GameObject room, ref StatContainer currentPlayer)
+    {
+        if (room == null)
+        {
+            return true;
+        }
+        if (room.GetComponent<Room>().locked && currentPlayer.keyCount < 1)
+        {
+            return true;
+        }
+        return false;
     }
 }
