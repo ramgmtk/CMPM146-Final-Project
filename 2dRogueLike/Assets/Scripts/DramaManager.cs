@@ -7,6 +7,7 @@ public class DramaManager : MonoBehaviour
 {
     public float dramaMeter;
     public const float MAX_DRAMAMETER = 100;
+    public const float MIN_DRAMAMETER = 0;
     private RoomDirector rd;
     private PlayerPlanner pp;
     // Start is called before the first frame update
@@ -202,14 +203,13 @@ public class DramaManager : MonoBehaviour
           newDramaMeter = 100 - increasingIntesity + player.health;
         }
 
-
         if (newDramaMeter > MAX_DRAMAMETER)
 		{
             newDramaMeter = MAX_DRAMAMETER;
 		}
-        if (newDramaMeter < 0)
+        else if (newDramaMeter < MIN_DRAMAMETER)
         {
-            newDramaMeter = 0;
+            newDramaMeter = MIN_DRAMAMETER;
         }
         dramaMeter = newDramaMeter;
 	}

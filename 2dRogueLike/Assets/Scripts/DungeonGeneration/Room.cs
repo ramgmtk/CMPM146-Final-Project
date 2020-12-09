@@ -11,6 +11,7 @@ public class Room : MonoBehaviour
     //THE FOLLOWING VARIABLES ARE USED FOR ROOM GENERATION DO NOT UTILIZE THEM. DO NOT CALL
     public int roomSize = 10;
     public GameObject wall;
+    public GameObject endWall;
     public GameObject floor;
     public GameObject door;
     public float offset = -4.5f;

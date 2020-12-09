@@ -87,6 +87,7 @@ public class RoomGenerator : MonoBehaviour
             CheckForNeighbors(ref instance, cardinal);
             currRoom = instance;
         }
+        makeEndRoomWalls(ref currRoom);
         currRoom.GetComponent<Room>().roomType = "End";
         currRoom.GetComponent<Room>().SetLockStatus(true);
         dungeonGenerated = true;
@@ -149,5 +150,20 @@ public class RoomGenerator : MonoBehaviour
             }
         }
 
+    }
+
+    private void makeEndRoomWalls(ref GameObject room)
+    {
+        int boundry = room.GetComponent<Room>().roomSize;
+        for (int i = 0; i<boundry; i++)
+        {
+            room.GetComponent<Room>().ReplaceTile(room.GetComponent<Room>().endWall, 0, i);
+            room.GetComponent<Room>().ReplaceTile(room.GetComponent<Room>().endWall, boundry-1, i);
+        }
+        for (int i = 1; i<boundry-1; i++)
+        {
+            room.GetComponent<Room>().ReplaceTile(room.GetComponent<Room>().endWall, i, 0);
+            room.GetComponent<Room>().ReplaceTile(room.GetComponent<Room>().endWall, i, boundry-1);
+        }
     }
 }
