@@ -140,6 +140,11 @@ public class DramaManager : MonoBehaviour
             {
               numFoodCount = 5;
             }
+            /*int foo  = rng.Next(1, 10);
+            if ( foo <= 5)
+            {
+                numFoodCount = 50;
+            }*/
             for (int i = 0; i < numFoodCount; i++)
             {
               rd.AddElementRandomly(room, rd.food);

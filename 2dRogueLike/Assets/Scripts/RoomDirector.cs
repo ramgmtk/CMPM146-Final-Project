@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using ArgumentException = System.ArgumentException;
 using UnityEngine;
 
-using Random = System.Random;
-
 [RequireComponent(typeof(RoomGenerator))]
 public class RoomDirector : MonoBehaviour
 {
@@ -82,6 +80,7 @@ public class RoomDirector : MonoBehaviour
             {
                 GameObject replaced = rm.elements[x,y];
                 Destroy(replaced);
+                rm.elements[x,y] = null;
             }
             if (newObject)
             {
@@ -126,7 +125,7 @@ public class RoomDirector : MonoBehaviour
      */
     private int GenerateLockedRooms(int maxNumberOfLockedRooms = 0, bool isRandomUpperLimit = true)
     {
-        Random rng = new Random();
+        System.Random rng = new System.Random();
         int limit = isRandomUpperLimit ? rng.Next(maxNumberOfLockedRooms + 1) : maxNumberOfLockedRooms;
 
         int lockedRoomCount = 0;
@@ -146,22 +145,23 @@ public class RoomDirector : MonoBehaviour
 
     // replaces a random tile with an element
     public void AddElementRandomly(GameObject room, GameObject element){
-        Random rng = new Random();
+        System.Random rng = new System.Random();
         bool elementPlaced = false;
         while(!elementPlaced)
         {
             // Choose a random x and y position
-            int randomX = rng.Next(1, room.GetComponent<Room>().roomSize - 1);
-            int randomY = rng.Next(1, room.GetComponent<Room>().roomSize - 1);
+            int randomX = Random.Range(1, room.GetComponent<Room>().roomSize - 1);//rng.Next(1, room.GetComponent<Room>().roomSize - 1);
+            int randomY = Random.Range(1, room.GetComponent<Room>().roomSize - 1);//rng.Next(1, room.GetComponent<Room>().roomSize - 1);
 
             // TODO: make it so that it checks if randomly selected location is floor vs wall
 
             // Check if random location does not have an item. If so, place key there.
-            if (!room.GetComponent<Room>().elements[randomX, randomY])
+            if (room.GetComponent<Room>().elements[randomX, randomY] && room.GetComponent<Room>().elements[randomX, randomY].tag == "Key")
             {
-                EditElementInRoom(ref room, randomX, randomY, element);
-                elementPlaced = true;
+                continue;
             }
+            EditElementInRoom(ref room, randomX, randomY, element);
+            elementPlaced = true;
         }
     }
 
@@ -175,7 +175,7 @@ public class RoomDirector : MonoBehaviour
     private int PlaceKeys(int numKeys)
     {
         // Random rng
-        Random rng = new Random();
+        System.Random rng = new System.Random();
 
         /*** RUN BFS AND CREATE DICTIONARY OF ROOMS THAT MAP TO # OF KEYS REQUIRED ***/
         // BFS based off of: https://www.redblobgames.com/pathfinding/a-star/introduction.html
@@ -276,7 +276,7 @@ public class RoomDirector : MonoBehaviour
 
     private void GenerateEnemies()
     {
-        Random rng = new Random();
+        System.Random rng = new System.Random();
         int NumEnemies(int health)
         {
             if(health < 20)
